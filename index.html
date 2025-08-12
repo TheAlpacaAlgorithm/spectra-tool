@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Spectrum Overlay</title>
+
+  <!-- Optional: einfaches CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Chart.js über CDN (zeigt das Linien-Diagramm) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Spektrum Overlay</h1>
+
+    <!-- Oberer Bereich: Canvas für das Liniendiagramm -->
+    <canvas id="spectrumChart" width="1000" height="300"></canvas>
+    <canvas id="colorBar" width="600" height="50" style="border:1px solid #ffffff;"></canvas>
+    <canvas id="starCanvas" width="150" height="150" style="background: black; border-radius: 10px;"></canvas>
+
+    <!-- Status / Hinweise -->
+    <p id="status">Bereit. Klicke „Weiter“ für das Laden des Spektrums.</p>
+  </div>
+
+  <!-- Haupt-JS (kommt in einem nächsten Schritt) -->
+  <script src="js/main.js"></script>
+</body>
+</html>
