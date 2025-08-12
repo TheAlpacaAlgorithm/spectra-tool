@@ -1,11 +1,17 @@
+function resizeOverlay() {
+  const overlay = document.getElementById('overlayCanvas');
+  overlay.width = window.innerWidth;
+  overlay.height = window.innerHeight;
+}
+
 function wavelengthToRGB(wavelength) {
   let R = 0, G = 0, B = 0, alpha = 1;
 
   if (wavelength >= 380 && wavelength < 440) {
-    attenuation = 0.3 + 0.7 * (wavelength - 380) / (440 - 380)
+    attenuation = 0.1 + 0.7 * (wavelength - 380) / (440 - 380)
     R = (-(wavelength - 440) / (440 - 380))*attenuation;
     G = 0;
-    B = 1;
+    B = attenuation;
   } else if (wavelength >= 440 && wavelength < 490) {
     R = 0;
     G = (wavelength - 440) / (490 - 440);
@@ -71,7 +77,6 @@ function drawColorBar(wavelengths, intensities) {
       }
     }
     const intensity = intensities[closestIndex];
-
     // Farbe bestimmen
     const color = wavelengthToRGB(wl);
     // Farbe mit Intensität multiplizieren
@@ -115,15 +120,39 @@ function drawStarColor(r, g, b) {
   ctx.fill();
 }
 
+// Calculate weighted average RGB color for visible wavelengths (380-780 nm)
+function weightedAverageColor(wavelengths, intensities) {
+  let sumR = 0, sumG = 0, sumB = 0;
+
+  for (let i = 0; i < wavelengths.length; i++) {
+    const wl = wavelengths[i];
+    if (wl >= 380 && wl <= 780) {
+      const intensity = intensities[i];
+      const color = wavelengthToRGB(wl);
+      sumR += color.r * intensity;
+      sumG += color.g * intensity;
+      sumB += color.b * intensity;
+    }
+  }
+  let totalIntensity = Math.max(sumR,sumG,sumB);
+
+  return {
+    r: Math.round(sumR / totalIntensity * 255),
+    g: Math.round(sumG / totalIntensity * 255),
+    b: Math.round(sumB / totalIntensity * 255),
+  };
+}
+
+
 // CSV-Datei laden und anzeigen
 fetch('../data/vega/vega_002.csv')
-  .then(response => {
+.then(response => {
     if (!response.ok) {
         throw new Error('Fehler beim Laden der CSV: ' + response.status + ' ' + response.statusText);
     }
     return response.text();
-  })
-  .then(text => {
+})
+.then(text => {
     const lines = text.trim().split('\n');
 
     // Arrays für Chart-Daten
@@ -132,58 +161,133 @@ fetch('../data/vega/vega_002.csv')
 
     // Erste Zeile ist meist Header, also ab i = 1
     for (let i = 1; i < lines.length; i++) {
-      const [w, f] = lines[i].split(',').map(Number);
-      wavelengths.push(w/10);
-      intensities.push(f);
+        const [w, f] = lines[i].split(',').map(Number);
+        wavelengths.push(w/10);
+        intensities.push(f);
     }
 
     const maxIntensity = Math.max(...intensities);
     const normIntensities = intensities.map(i => i / maxIntensity);
 
-    // Chart.js Diagramm erstellen
-    const ctx = document.getElementById('spectrumChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: wavelengths,
-        datasets: [{
-          label: 'Vega-Spektrum',
-          data: normIntensities,
-          borderColor: 'rgb(0, 0, 255)',
-          borderWidth: 2,
-          pointRadius: 0, // keine Punkte, nur Linie
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            type: 'linear',
-            title: {
-              display: true,
-              text: 'Wellenlänge (nm)'
-            },
-            /* min: 100,
-            max: 1500 */
-            min: 380,
-            max: 780
-          },
-          y: {
-            type: 'linear',
-            title: {
-              display: true,
-              text: 'Intensität'
-            },
-            min: 0,
-            max: 1
-          }
+    const visibleRangeBackground = {
+  id: 'visibleRangeBackground',
+  beforeDraw: (chart) => {
+    const { ctx, chartArea, scales } = chart;
+    const xMin = 380;
+    const xMax = 780;
+    const left = scales.x.getPixelForValue(xMin);
+    const right = scales.x.getPixelForValue(xMax);
+    const top = chartArea.top;
+    const bottom = chartArea.bottom;
+    const height = bottom - top;
+
+    const width = right - left;
+
+    for (let i = 0; i < width; i++) {
+      // Berechne Wellenlänge für Pixel
+      const wl = xMin + (i / width) * (xMax - xMin);
+
+      // Suche Intensität (minimale Differenz)
+      let closestIndex = 0;
+      let minDiff = Infinity;
+      for (let j = 0; j < wavelengths.length; j++) {
+        const diff = Math.abs(wavelengths[j] - wl);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestIndex = j;
         }
       }
+      const intensity = normIntensities[closestIndex];
+      // Farbe mit deiner wavelengthToRGB-Funktion
+      const color = wavelengthToRGB(wl);
+
+      const r = Math.min(255, Math.round(color.r * intensity));
+      const g = Math.min(255, Math.round(color.g * intensity));
+      const b = Math.min(255, Math.round(color.b * intensity));
+
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(left + i, top, 1, height);
+    }
+  }
+};
+
+
+    // Chart.js Diagramm erstellen
+    const ctx = document.getElementById('spectrumChart').getContext('2d');
+
+    const spectrumChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: wavelengths,
+            datasets: [{
+                label: 'Vega-Spektrum',
+                data: normIntensities,
+                borderColor: 'rgb(255, 255, 255)',
+                borderWidth: 2,
+                pointRadius: 0, // keine Punkte, nur Linie
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(255,255,255,0.2)' // faint white gridlines
+                    },
+                    type: 'linear',
+                    ticks: {
+                        color: 'white',
+                        font: {
+                            size: 14
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Wellenlänge (nm)',
+                        color: "white",
+                        font: {
+                            size: 18
+                        }
+                    },
+                    min: 100,
+                    max: 1500
+                    /* min: 380,
+                    max: 780 */
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255,255,255,0.2)' // faint white gridlines
+                    },
+                    type: 'linear',
+                    ticks: {
+                        color: 'white',
+                        font: {
+                            size: 14
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Intensität',
+                        color: "white",
+                        font: {
+                            size: 18
+                        }
+                    },
+                    min: 0,
+                    max: 1
+                }
+            }
+        },
+        plugins: [visibleRangeBackground]
     });
-    drawColorBar(wavelengths, normIntensities);
-    document.getElementById('status').textContent = "Spektrum geladen.";
+    const avgColor = weightedAverageColor(wavelengths, intensities);
+    drawStarColor(avgColor.r, avgColor.g, avgColor.b);
   })
   .catch(err => {
     console.error('Fehler beim Laden der CSV:', err);
-    document.getElementById('status').textContent = "Fehler beim Laden der CSV.";
   });

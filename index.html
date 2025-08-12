@@ -10,18 +10,50 @@
 
   <!-- Chart.js über CDN (zeigt das Linien-Diagramm) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+        background-color: black;
+        color: white;
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 0;
+        padding: 20px;
+    }
+    .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+    canvas {
+      border-radius: 10px;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <h1>Spektrum Overlay</h1>
 
     <!-- Oberer Bereich: Canvas für das Liniendiagramm -->
-    <canvas id="spectrumChart" width="1000" height="300"></canvas>
-    <canvas id="colorBar" width="600" height="50" style="border:1px solid #ffffff;"></canvas>
-    <canvas id="starCanvas" width="150" height="150" style="background: black; border-radius: 10px;"></canvas>
-
-    <!-- Status / Hinweise -->
-    <p id="status">Bereit. Klicke „Weiter“ für das Laden des Spektrums.</p>
+    <canvas 
+        id="spectrumChart" 
+        width="1000" 
+        height="300">
+    </canvas><!-- 
+    <canvas 
+        id="colorBar" 
+        width="600" 
+        height="150">
+    </canvas> -->
+    <canvas 
+        id="starCanvas" 
+        width="150" 
+        height="150">
+    </canvas>
+    <canvas 
+        id="overlayCanvas" 
+        width="1000" 
+        height="300">
+    </canvas>
   </div>
 
   <!-- Haupt-JS (kommt in einem nächsten Schritt) -->
