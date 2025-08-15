@@ -1,14 +1,8 @@
-function resizeOverlay() {
-  const overlay = document.getElementById('overlayCanvas');
-  overlay.width = window.innerWidth;
-  overlay.height = window.innerHeight;
-}
-
 function wavelengthToRGB(wavelength) {
   let R = 0, G = 0, B = 0, alpha = 1;
 
   if (wavelength >= 380 && wavelength < 440) {
-    attenuation = 0.1 + 0.7 * (wavelength - 380) / (440 - 380)
+    const attenuation = 0.1 + 0.7 * (wavelength - 380) / (440 - 380)
     R = (-(wavelength - 440) / (440 - 380))*attenuation;
     G = 0;
     B = attenuation;
@@ -48,45 +42,6 @@ function wavelengthToRGB(wavelength) {
     g: Math.round(G * 255),
     b: Math.round(B * 255)
   };
-}
-
-function drawColorBar(wavelengths, intensities) {
-  const canvas = document.getElementById('colorBar');
-  const ctx = canvas.getContext('2d');
-  const width = canvas.width;
-  const height = canvas.height;
-
-  // Hintergrund löschen
-  ctx.clearRect(0, 0, width, height);
-
-  // Breite pro Pixel
-  const pixels = width;
-  for (let i = 0; i < pixels; i++) {
-    // Wellenlänge für Pixel berechnen (linear zwischen 380nm und 780nm)
-    const wl = 380 + (i / pixels) * (780 - 380);
-
-    // Nächste Intensität im Datensatz finden (vereinfachte Annahme)
-    // Wir nehmen den Wert mit minimalem Abstand zu wl
-    let closestIndex = 0;
-    let minDiff = Infinity;
-    for (let j = 0; j < wavelengths.length; j++) {
-      const diff = Math.abs(wavelengths[j] - wl);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestIndex = j;
-      }
-    }
-    const intensity = intensities[closestIndex];
-    // Farbe bestimmen
-    const color = wavelengthToRGB(wl);
-    // Farbe mit Intensität multiplizieren
-    const r = Math.min(255, Math.round(color.r * intensity));
-    const g = Math.min(255, Math.round(color.g * intensity));
-    const b = Math.min(255, Math.round(color.b * intensity));
-
-    ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.fillRect(i, 0, 1, height);
-  }
 }
 
 function drawStarColor(r, g, b) {
@@ -169,47 +124,74 @@ fetch('../data/vega/vega_002.csv')
     const maxIntensity = Math.max(...intensities);
     const normIntensities = intensities.map(i => i / maxIntensity);
 
-    const visibleRangeBackground = {
-  id: 'visibleRangeBackground',
-  beforeDraw: (chart) => {
-    const { ctx, chartArea, scales } = chart;
-    const xMin = 380;
-    const xMax = 780;
-    const left = scales.x.getPixelForValue(xMin);
-    const right = scales.x.getPixelForValue(xMax);
-    const top = chartArea.top;
-    const bottom = chartArea.bottom;
-    const height = bottom - top;
+    const visibleRangeBackground = { 
+      id: 'visibleRangeBackground',
+      beforeDraw: (chart) => {
+        const { ctx, chartArea, scales } = chart;
+          const xMin = 380;
+          const xMax = 780;
+          const left = scales.x.getPixelForValue(xMin);
+          const right = scales.x.getPixelForValue(xMax);
+          const top = chartArea.top;
+          const bottom = chartArea.bottom;
+          const height = bottom - top;
 
-    const width = right - left;
+          // Create gradient across the visible spectrum
+          const gradient = ctx.createLinearGradient(left, 0, right, 0);
 
-    for (let i = 0; i < width; i++) {
-      // Berechne Wellenlänge für Pixel
-      const wl = xMin + (i / width) * (xMax - xMin);
+          // Use multiple stops for smoothness
+          const stops = 200; // more stops = smoother color transitions
+          for (let i = 0; i <= stops; i++) {
+            const wl = xMin + (i / stops) * (xMax - xMin);
 
-      // Suche Intensität (minimale Differenz)
-      let closestIndex = 0;
-      let minDiff = Infinity;
-      for (let j = 0; j < wavelengths.length; j++) {
-        const diff = Math.abs(wavelengths[j] - wl);
-        if (diff < minDiff) {
-          minDiff = diff;
-          closestIndex = j;
-        }
+            // Find closest intensity value
+            let closestIndex = 0;
+            let minDiff = Infinity;
+            for (let j = 0; j < wavelengths.length; j++) {
+              const diff = Math.abs(wavelengths[j] - wl);
+              if (diff < minDiff) {
+                minDiff = diff;
+                closestIndex = j;
+              }
+            }
+
+            const intensity = normIntensities[closestIndex];
+            const color = wavelengthToRGB(wl);
+
+            const r = Math.min(255, Math.round(color.r * intensity));
+            const g = Math.min(255, Math.round(color.g * intensity));
+            const b = Math.min(255, Math.round(color.b * intensity));
+
+            gradient.addColorStop(i / stops, `rgb(${r},${g},${b})`);
+          }
+
+          // Fill the area with the gradient
+          ctx.save();
+          ctx.fillStyle = gradient;
+          ctx.fillRect(left, top, right - left, height);
+          ctx.restore();
       }
-      const intensity = normIntensities[closestIndex];
-      // Farbe mit deiner wavelengthToRGB-Funktion
-      const color = wavelengthToRGB(wl);
+    };
 
-      const r = Math.min(255, Math.round(color.r * intensity));
-      const g = Math.min(255, Math.round(color.g * intensity));
-      const b = Math.min(255, Math.round(color.b * intensity));
+    const drawStarPlugin = {
+      id: 'drawStar',
+      afterDraw: (chart) => {
+        const { ctx, chartArea } = chart;
+        const starCanvas = document.getElementById('starCanvas');
+        if (!starCanvas) return;
 
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fillRect(left + i, top, 1, height);
-    }
-  }
-};
+        const size = 100; // pixels
+        const x = chartArea.right - size - 1; // 10px padding from right
+        const y = chartArea.top + 1; // 10px padding from top
+        ctx.save();
+        ctx.fillStyle = 'black';
+        ctx.fillRect(x, y, size, size);
+        ctx.restore();
+        ctx.save();
+        ctx.drawImage(starCanvas, x, y, size, size);
+        ctx.restore();
+      }
+    };
 
 
     // Chart.js Diagramm erstellen
@@ -283,7 +265,7 @@ fetch('../data/vega/vega_002.csv')
                 }
             }
         },
-        plugins: [visibleRangeBackground]
+        plugins: [visibleRangeBackground, drawStarPlugin]
     });
     const avgColor = weightedAverageColor(wavelengths, intensities);
     drawStarColor(avgColor.r, avgColor.g, avgColor.b);

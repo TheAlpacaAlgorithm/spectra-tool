@@ -19,6 +19,7 @@
     background: black; 
     border-radius: 10px;
     z-index: 800;
+    display: none
 }
 
 #spectrumChart {

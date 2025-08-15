@@ -32,7 +32,14 @@
 <body>
   <div class="container">
     <h1>Spektrum Overlay</h1>
-
+    <div id="controls" style="margin: 10px; text-align: center;">
+      <label for="csvSelect" style="color: white;">Select Star Spectrum:</label>
+      <select id="csvSelect">
+        <option value="../data/vega/vega_002.csv">Vega</option>
+        <option value="../data/sirius/sirius_002.csv">Sirius</option>
+        <option value="../data/sun/sun_002.csv">Sun</option>
+      </select>
+    </div>
     <!-- Oberer Bereich: Canvas für das Liniendiagramm -->
     <canvas 
         id="spectrumChart" 
@@ -49,14 +56,9 @@
         width="150" 
         height="150">
     </canvas>
-    <canvas 
-        id="overlayCanvas" 
-        width="1000" 
-        height="300">
-    </canvas>
   </div>
 
   <!-- Haupt-JS (kommt in einem nächsten Schritt) -->
-  <script src="js/main.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
