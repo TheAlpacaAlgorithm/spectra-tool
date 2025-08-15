@@ -100,7 +100,7 @@ function weightedAverageColor(wavelengths, intensities) {
 
 
 // CSV-Datei laden und anzeigen
-fetch('../data/vega/vega_002.csv')
+fetch('data/vega/vega_002.csv')
 .then(response => {
     if (!response.ok) {
         throw new Error('Fehler beim Laden der CSV: ' + response.status + ' ' + response.statusText);
