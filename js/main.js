@@ -4,7 +4,7 @@ if (window.Chart && window.ChartZoom) {
   console.warn('chartjs-plugin-zoom not found');
 }
 
-const ELEMENT_CSV = (key) => `../data/elements/${key}.csv`;
+const ELEMENT_CSV = (key) => `./data/elements/${key}.csv`;
 const elementCache = new Map();
 
 function wavelengthToRGB(wavelength) {
