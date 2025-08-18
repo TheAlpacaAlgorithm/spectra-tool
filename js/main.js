@@ -1,3 +1,9 @@
+if (window.Chart && window.ChartZoom) {
+  Chart.register(ChartZoom);
+} else {
+  console.warn('chartjs-plugin-zoom not found');
+}
+
 function wavelengthToRGB(wavelength) {
   let R = 0, G = 0, B = 0, alpha = 1;
 
@@ -98,10 +104,9 @@ function weightedAverageColor(wavelengths, intensities) {
   };
 }
 
-
-// CSV-Datei laden und anzeigen
-fetch('data/vega/vega_002.csv')
-.then(response => {
+function loadSpectrum(csvpath) {
+  fetch(csvpath)
+  .then(response => {
     if (!response.ok) {
         throw new Error('Fehler beim Laden der CSV: ' + response.status + ' ' + response.statusText);
     }
@@ -117,12 +122,13 @@ fetch('data/vega/vega_002.csv')
     // Erste Zeile ist meist Header, also ab i = 1
     for (let i = 1; i < lines.length; i++) {
         const [w, f] = lines[i].split(',').map(Number);
-        wavelengths.push(w/10);
+        wavelengths.push(w);
         intensities.push(f);
     }
 
     const maxIntensity = Math.max(...intensities);
     const normIntensities = intensities.map(i => i / maxIntensity);
+    const indices = [];
 
     const visibleRangeBackground = { 
       id: 'visibleRangeBackground',
@@ -141,6 +147,7 @@ fetch('data/vega/vega_002.csv')
 
           // Use multiple stops for smoothness
           const stops = 200; // more stops = smoother color transitions
+          let maxint = 0;
           for (let i = 0; i <= stops; i++) {
             const wl = xMin + (i / stops) * (xMax - xMin);
 
@@ -154,8 +161,14 @@ fetch('data/vega/vega_002.csv')
                 closestIndex = j;
               }
             }
-
-            const intensity = normIntensities[closestIndex];
+            indices.push(closestIndex)
+            if (normIntensities[closestIndex] > maxint) {
+              maxint = normIntensities[closestIndex];
+            }
+          }
+          for (let i = 0; i <= stops; i++) {
+            const wl = xMin + (i / stops) * (xMax - xMin);
+            const intensity = normIntensities[indices[i]]/maxint;
             const color = wavelengthToRGB(wl);
 
             const r = Math.min(255, Math.round(color.r * intensity));
@@ -164,7 +177,6 @@ fetch('data/vega/vega_002.csv')
 
             gradient.addColorStop(i / stops, `rgb(${r},${g},${b})`);
           }
-
           // Fill the area with the gradient
           ctx.save();
           ctx.fillStyle = gradient;
@@ -197,7 +209,10 @@ fetch('data/vega/vega_002.csv')
     // Chart.js Diagramm erstellen
     const ctx = document.getElementById('spectrumChart').getContext('2d');
 
-    const spectrumChart = new Chart(ctx, {
+    if (spectrumChart) {
+        spectrumChart.destroy();
+    }
+    spectrumChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: wavelengths,
@@ -212,9 +227,23 @@ fetch('data/vega/vega_002.csv')
         options: {
             responsive: true,
             plugins: {
-                legend: {
-                    display: false
+              legend: {
+                  display: false
+              },
+              zoom: {
+                zoom:{
+                  drag: { 
+                    enabled: true,
+                    backgroundColor: 'rgba(255,255,255,0.08)',
+                  },
+                  pinch: { enabled: true },
+                  mode: 'xy'
+                },
+                pan: {
+                  enabled: false,
+                  mode: 'x'
                 }
+              } 
             },
             scales: {
                 x: {
@@ -243,7 +272,7 @@ fetch('data/vega/vega_002.csv')
                 },
                 y: {
                     grid: {
-                        color: 'rgba(255,255,255,0.2)' // faint white gridlines
+                        color: 'rgba(255, 255, 255, 0.2)' // faint white gridlines
                     },
                     type: 'linear',
                     ticks: {
@@ -273,3 +302,19 @@ fetch('data/vega/vega_002.csv')
   .catch(err => {
     console.error('Fehler beim Laden der CSV:', err);
   });
+}
+
+let spectrumChart = null;
+
+const csvSelect = document.getElementById('csvSelect');
+loadSpectrum(csvSelect.value)
+
+csvSelect.addEventListener('change', () => {
+    loadSpectrum(csvSelect.value);
+});
+
+document.getElementById('resetZoomBtn').addEventListener('click', () => {
+  if (spectrumChart && spectrumChart.resetZoom) {
+    spectrumChart.resetZoom();
+  }
+});
