@@ -4,6 +4,9 @@ if (window.Chart && window.ChartZoom) {
   console.warn('chartjs-plugin-zoom not found');
 }
 
+const ELEMENT_CSV = (key) => `../data/elements/${key}.csv`;
+const elementCache = new Map();
+
 function wavelengthToRGB(wavelength) {
   let R = 0, G = 0, B = 0, alpha = 1;
 
@@ -304,6 +307,49 @@ function loadSpectrum(csvpath) {
   });
 }
 
+function buildElementDataset(elementKey, wavelengths, color = 'rgba(255,255,255,0.85)') {
+  const data = [];
+  for (const wl of wavelengths) { data.push({ x: wl, y: 0 }, { x: wl, y: 1 }, { x: wl, y: null }); }
+  return {
+    label: `Lines: ${elementKey}`,
+    type: 'line',
+    data,
+    parsing: false,
+    pointRadius: 0,
+    showLine: true,
+    borderColor: color,
+    borderWidth: 1,
+    spanGaps: false,
+  };
+}
+
+async function getElementWavelengths(elementKey) {
+  if (elementCache.has(elementKey)) return elementCache.get(elementKey);
+  const res = await fetch(ELEMENT_CSV(elementKey));
+  if (!res.ok) throw new Error(`Element CSV not found: ${elementKey}`);
+  const text = await res.text();
+  const lines = text.trim().split('\n');
+  const out = [];
+  for (let i = 1; i < lines.length; i++) { // skip header
+    const v = Number(lines[i].split(',')[0]); // first column: wavelength in nm
+    if (Number.isFinite(v)) out.push(v);
+  }
+  elementCache.set(elementKey, out);
+  return out;
+}
+
+async function toggleElementDataset(elementKey, visible) {
+  if (!spectrumChart) return;
+  let ds = spectrumChart.data.datasets.find(d => d.label === `Lines: ${elementKey}`);
+  if (!ds && visible) {
+    const wavelengths = await getElementWavelengths(elementKey);
+    ds = buildElementDataset(elementKey, wavelengths);
+    spectrumChart.data.datasets.push(ds);
+  }
+  if (ds) ds.hidden = !visible;
+  spectrumChart.update('none');
+}
+
 let spectrumChart = null;
 
 const csvSelect = document.getElementById('csvSelect');
@@ -317,4 +363,13 @@ document.getElementById('resetZoomBtn').addEventListener('click', () => {
   if (spectrumChart && spectrumChart.resetZoom) {
     spectrumChart.resetZoom();
   }
+});
+
+document.querySelectorAll('.line-toggle').forEach(cb => {
+  cb.addEventListener('change', async (e) => {
+    const key = e.target.value;          // e.g., "H"
+    const on = e.target.checked;
+    try { await toggleElementDataset(key, on); }
+    catch (err) { console.error(err); }
+  });
 });

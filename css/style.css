@@ -23,6 +23,22 @@
   margin: 0 auto; /* keeps it centered */
 }
 
+.controls.lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls.lines label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 14px;
+  user-select: none;
+}
+
 #starCanvas {
     background: black; 
     border-radius: 10px;
