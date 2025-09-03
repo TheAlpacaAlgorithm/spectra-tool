@@ -38,7 +38,7 @@
         <select id="csvSelect">
           <option value="./data/stars/vega_002.csv">Wega</option>
           <option value="./data/stars/10lac_003.csv">10 Lacertae</option>
-          <option value="./data/stars/sonne_lasp.csv">Sun</option>
+          <option value="./data/stars/sonne_lasp.csv">Sonne</option>
         </select>
       </div>
     </div>
@@ -48,14 +48,12 @@
         width="1000" 
         height="300">
     </canvas>
-    <div class="container">
-      <div class="controls">
-        <div>
+      <div>
+        <div style="display:flex; align-items:center; gap:12px; justify-content:flex-start;">
           <span>Zoome, indem du ein Rechteck ziehst.</span>
           <button id="resetZoomBtn">Reset</button>
         </div>
       </div>
-    </div>
     <div class="container">
       <h3>Welche Elemente kannst du im Spektrum erkennen?</h3> 
     </div>
@@ -65,13 +63,10 @@
       <label><input type="checkbox" class="line-toggle" value="Na"> Natrium (Na)</label>
       <label><input type="checkbox" class="line-toggle" value="Ca"> Kalzium (Ca)</label>
       <label><input type="checkbox" class="line-toggle" value="Mg"> Magnesium (Mg)</label>
-    </div>
-    <div class="controls lines" aria-label="Elementlinien ein-/ausblenden" role="group">
-      <label><input type="checkbox" class="line-toggle" value="H"> Wasserstoff (H)</label>
-      <label><input type="checkbox" class="line-toggle" value="He"> Helium (He)</label>
-      <label><input type="checkbox" class="line-toggle" value="Na"> Natrium (Na)</label>
-      <label><input type="checkbox" class="line-toggle" value="Ca"> Kalzium (Ca)</label>
-      <label><input type="checkbox" class="line-toggle" value="Mg"> Magnesium (Mg)</label>
+      <label><input type="checkbox" class="line-toggle" value="Fe"> Eisen (Fe)</label>
+      <label><input type="checkbox" class="line-toggle" value="Cr"> Chrom (Cr)</label>
+      <label><input type="checkbox" class="line-toggle" value="O"> Sauerstoff (O)</label>
+      <label><input type="checkbox" class="line-toggle" value="C"> Kohlenstoff (C)</label>
     </div>
     <canvas 
         id="starCanvas" 

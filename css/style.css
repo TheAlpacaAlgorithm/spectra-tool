@@ -54,3 +54,12 @@
     -webkit-user-drag: none;
     touch-action: none;  /* needed for pointer events on some browsers */
 }
+
+#resetZoomBtn {
+  padding: 8px 16px;      /* bigger clickable area */
+  min-width: 80px;        /* ensure a wider button */
+  min-height: 36px;       /* ensure a taller button */
+  font-size: 14px;        /* readable text */
+  border-radius: 6px;     /* nicer look */
+  cursor: pointer;
+}

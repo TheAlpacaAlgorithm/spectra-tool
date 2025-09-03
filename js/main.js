@@ -299,6 +299,7 @@ function loadSpectrum(csvpath) {
         },
         plugins: [visibleRangeBackground, drawStarPlugin]
     });
+    syncElementVisibilityFromUI();
     const avgColor = weightedAverageColor(wavelengths, intensities);
     drawStarColor(avgColor.r, avgColor.g, avgColor.b);
   })
@@ -321,6 +322,16 @@ function buildElementDataset(elementKey, wavelengths, color = 'rgba(255,255,255,
     borderWidth: 1,
     spanGaps: false,
   };
+}
+
+async function syncElementVisibilityFromUI() {
+  if (!spectrumChart) return;
+  const tasks = [];
+  document.querySelectorAll('.line-toggle').forEach(cb => {
+    const key = cb.value;
+    tasks.push(toggleElementDataset(key, cb.checked)); // creates if missing, hides if unchecked
+  });
+  await Promise.all(tasks);
 }
 
 async function getElementWavelengths(elementKey) {
