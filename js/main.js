@@ -5,6 +5,17 @@ if (window.Chart && window.ChartZoom) {
 }
 
 const ELEMENT_CSV = (key) => `./data/elements/${key}.csv`;
+const ELEMENT_COL = {
+  H: "rgb(220, 20, 60)",
+  He: "rgb(138, 43, 226)",
+  C:  "rgb(105, 105, 105)",
+  O:  "rgb(30, 144, 255)",
+  Na: "rgb(218, 165, 32)",
+  Mg: "rgb(34, 139, 34)",
+  Ca: "rgb(205, 92, 92)",
+  Cr: "rgb(0, 128, 128)",
+  Fe: "rgb(160, 82, 45)"
+};
 const elementCache = new Map();
 
 function wavelengthToRGB(wavelength) {
@@ -308,8 +319,9 @@ function loadSpectrum(csvpath) {
   });
 }
 
-function buildElementDataset(elementKey, wavelengths, color = 'rgba(255,255,255,0.85)') {
+function buildElementDataset(elementKey, wavelengths) {
   const data = [];
+  const color = ELEMENT_COL[elementKey];
   for (const wl of wavelengths) { data.push({ x: wl, y: 0 }, { x: wl, y: 1 }, { x: wl, y: null }); }
   return {
     label: `Lines: ${elementKey}`,
